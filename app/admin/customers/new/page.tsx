@@ -37,32 +37,26 @@ export default function NewCustomerPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-500 text-sm">Loading...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-gray-300 dark:border-zinc-700 border-t-brand rounded-full animate-spin" />
       </div>
     );
   }
 
-  if (!session) {
-    redirect("/login");
-  }
+  if (!session) redirect("/login");
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  // Auto-fill Role ARN when account ID is entered
   function handleAccountIdChange(e: React.ChangeEvent<HTMLInputElement>) {
     const accountId = e.target.value;
     setForm((prev) => ({
       ...prev,
       accountId,
-      roleArn:
-        accountId.length === 12
-          ? `arn:aws:iam::${accountId}:role/CitiusCloud-ReadOnly`
-          : prev.roleArn,
+      roleArn: accountId.length === 12
+        ? `arn:aws:iam::${accountId}:role/CitiusCloud-ReadOnly`
+        : prev.roleArn,
     }));
   }
 
@@ -70,7 +64,6 @@ export default function NewCustomerPage() {
     e.preventDefault();
     setSubmitting(true);
     setServerError(null);
-
     try {
       const res = await fetch("/api/customers", {
         method: "POST",
@@ -84,14 +77,8 @@ export default function NewCustomerPage() {
           region: form.region,
         }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setServerError(data.error || "Failed to add customer");
-        return;
-      }
-
+      if (!res.ok) { setServerError(data.error || "Failed to add account"); return; }
       router.push("/dashboard");
     } catch {
       setServerError("Network error — please try again");
@@ -100,66 +87,65 @@ export default function NewCustomerPage() {
     }
   }
 
+  const inputClass = "w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors";
+  const labelClass = "block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5";
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
       <Navbar userEmail={session?.user?.email} userName={session?.user?.name} />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-8">
+      <main className="max-w-lg mx-auto px-4 py-10">
+        <div className="mb-7">
           <a
             href="/dashboard"
-            className="text-gray-500 hover:text-gray-300 text-sm transition-colors inline-flex items-center gap-1"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors mb-5"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Dashboard
+            Back
           </a>
-          <h1 className="text-2xl font-bold text-white mt-4">Add Customer Account</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            The customer must have already deployed the CitiusCloud IAM role in their account.
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-zinc-100">Add Customer Account</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-500 mt-1">
+            The CitiusCloud IAM role must already be deployed in the customer account.
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5"
+          className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-6 space-y-5 shadow-sm"
         >
-          {/* Customer name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Customer Name <span className="text-red-400">*</span>
+            <label className={labelClass}>
+              Customer Name <span className="text-red-500">*</span>
             </label>
             <input
               name="name"
               value={form.name}
               onChange={handleChange}
               required
-              placeholder="e.g. Ekishwar — used to group all their accounts"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm"
+              placeholder="e.g. Ekishwar — groups all their accounts"
+              className={inputClass}
             />
           </div>
 
-          {/* Account name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Account Name{" "}
-              <span className="text-gray-600 font-normal">(optional)</span>
+            <label className={labelClass}>
+              Account Name <span className="text-gray-400 dark:text-zinc-600 font-normal">(optional)</span>
             </label>
             <input
               name="accountName"
               value={form.accountName}
               onChange={handleChange}
               placeholder="e.g. Production, Development, Staging"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm"
+              className={inputClass}
             />
-            <p className="text-gray-600 text-xs mt-1">Friendly label for this specific AWS account</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1">Friendly label for this specific AWS account</p>
           </div>
 
-          {/* AWS Account ID */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              AWS Account ID <span className="text-red-400">*</span>
+            <label className={labelClass}>
+              AWS Account ID <span className="text-red-500">*</span>
             </label>
             <input
               name="accountId"
@@ -169,14 +155,13 @@ export default function NewCustomerPage() {
               placeholder="123456789012"
               pattern="\d{12}"
               title="Must be a 12-digit AWS account number"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm font-mono"
+              className={`${inputClass} font-mono`}
             />
           </div>
 
-          {/* Role ARN */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Role ARN <span className="text-red-400">*</span>
+            <label className={labelClass}>
+              Role ARN <span className="text-red-500">*</span>
             </label>
             <input
               name="roleArn"
@@ -184,71 +169,56 @@ export default function NewCustomerPage() {
               onChange={handleChange}
               required
               placeholder="arn:aws:iam::123456789012:role/CitiusCloud-ReadOnly"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm font-mono"
+              className={`${inputClass} font-mono`}
             />
-            <p className="text-gray-600 text-xs mt-1">
-              Auto-filled when you enter the Account ID
-            </p>
+            <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1">Auto-filled when you enter the Account ID</p>
           </div>
 
-          {/* External ID */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              External ID{" "}
-              <span className="text-gray-600 font-normal">(optional)</span>
+            <label className={labelClass}>
+              External ID <span className="text-gray-400 dark:text-zinc-600 font-normal">(optional)</span>
             </label>
             <input
               name="externalId"
               value={form.externalId}
               onChange={handleChange}
-              placeholder="Leave blank if the IAM role has no ExternalId condition"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm font-mono"
+              placeholder="Leave blank if the role has no ExternalId condition"
+              className={`${inputClass} font-mono`}
             />
           </div>
 
-          {/* Region */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
-              Primary Region
-            </label>
+            <label className={labelClass}>Region</label>
             <select
               name="region"
               value={form.region}
               onChange={handleChange}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-orange-500 text-sm"
+              className={inputClass}
             >
               {AWS_REGIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
           </div>
 
-          {/* Error */}
           {serverError && (
-            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-4 py-3">
               {serverError}
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
-            {submitting ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-                Adding...
-              </>
-            ) : (
-              "Add Customer Account"
+            {submitting && (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
             )}
+            {submitting ? "Adding..." : "Add Account"}
           </button>
         </form>
       </main>

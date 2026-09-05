@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -8,9 +9,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        orange: {
-          500: "#FF6B00",
-          600: "#E05F00",
+        brand: {
+          DEFAULT: "#FF6B00",
+          hover: "#E05F00",
         },
       },
     },
