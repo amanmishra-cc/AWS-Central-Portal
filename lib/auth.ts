@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CognitoProvider from "next-auth/providers/cognito";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_LOGIN === "true";
 
 export const authOptions: NextAuthOptions = {
   providers: [
