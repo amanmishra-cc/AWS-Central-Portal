@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { listCustomers } from "@/lib/dynamodb";
 import { Navbar } from "@/components/navbar";
 import { CustomersList } from "@/components/customers-list";
+import { SessionWarning } from "@/components/session-warning";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
       <Navbar userEmail={session.user?.email} userName={session.user?.name} />
+      <SessionWarning />
 
       <main className="flex-1 flex flex-col px-5 py-5 gap-4 max-w-screen-xl mx-auto w-full">
         {/* Header */}

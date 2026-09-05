@@ -4,23 +4,38 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Customer } from "@/lib/dynamodb";
 
-type CustomerGroup = {
-  name: string;
-  accounts: Customer[];
-};
+type CustomerGroup = { name: string; accounts: Customer[] };
+type FlatAccount = Customer & { customerName: string };
 
 export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
   const [selected, setSelected] = useState<string>(groups[0]?.name ?? "");
   const [search, setSearch] = useState("");
 
-  const filteredGroups = search.trim()
+  const q = search.trim().toLowerCase();
+
+  // Global search: flat list across all customers
+  const searchResults: FlatAccount[] = q
+    ? groups.flatMap((g) =>
+        g.accounts
+          .filter(
+            (a) =>
+              g.name.toLowerCase().includes(q) ||
+              a.accountId.includes(q) ||
+              (a.accountName ?? "").toLowerCase().includes(q) ||
+              (a.accessType ?? "").toLowerCase().includes(q)
+          )
+          .map((a) => ({ ...a, customerName: g.name }))
+      )
+    : [];
+
+  const filteredGroups = q
     ? groups.filter(
         (g) =>
-          g.name.toLowerCase().includes(search.toLowerCase()) ||
+          g.name.toLowerCase().includes(q) ||
           g.accounts.some(
             (a) =>
-              a.accountId.includes(search) ||
-              (a.accountName ?? "").toLowerCase().includes(search.toLowerCase())
+              a.accountId.includes(q) ||
+              (a.accountName ?? "").toLowerCase().includes(q)
           )
       )
     : groups;
@@ -33,20 +48,22 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
       <aside className="w-60 flex-shrink-0 border-r border-gray-200 dark:border-zinc-800 flex flex-col">
         <div className="p-3 border-b border-gray-200 dark:border-zinc-800">
           <div className="relative">
-            <svg
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-zinc-500 pointer-events-none"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-zinc-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-100 dark:bg-zinc-800 border-0 rounded-md text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-brand"
+              placeholder="Search all accounts..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-gray-100 dark:bg-zinc-800 border-0 rounded-md text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-brand"
             />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -60,26 +77,22 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
               return (
                 <button
                   key={group.name}
-                  onClick={() => setSelected(group.name)}
+                  onClick={() => { setSelected(group.name); setSearch(""); }}
                   className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
-                    isSelected
+                    isSelected && !q
                       ? "bg-orange-50 dark:bg-orange-500/10 text-brand"
                       : "text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/60"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                      className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs font-semibold ${
-                        isSelected
-                          ? "bg-brand text-white"
-                          : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-400"
-                      }`}
-                    >
+                    <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 text-xs font-semibold ${
+                      isSelected && !q ? "bg-brand text-white" : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-400"
+                    }`}>
                       {group.name[0].toUpperCase()}
                     </div>
                     <span className="text-sm font-medium truncate">{group.name}</span>
                   </div>
-                  <span className={`text-xs flex-shrink-0 ml-1 ${isSelected ? "text-brand/70" : "text-gray-400 dark:text-zinc-600"}`}>
+                  <span className={`text-xs flex-shrink-0 ml-1 ${isSelected && !q ? "text-brand/70" : "text-gray-400 dark:text-zinc-600"}`}>
                     {active}/{group.accounts.length}
                   </span>
                 </button>
@@ -103,17 +116,48 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {activeGroup ? (
+        {q ? (
+          /* Global search results */
           <>
-            {/* Customer header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800 flex-shrink-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-zinc-100">
+                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for &quot;{search}&quot;
+              </p>
+            </div>
+            <div className="flex-1 overflow-auto">
+              {searchResults.length === 0 ? (
+                <div className="flex items-center justify-center h-32">
+                  <p className="text-sm text-gray-400 dark:text-zinc-600">No accounts match your search</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-gray-50 dark:bg-zinc-800/60 z-[1]">
+                    <tr>
+                      <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Customer</th>
+                      <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Account Name</th>
+                      <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Account ID</th>
+                      <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden md:table-cell">Access Type</th>
+                      <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Status</th>
+                      <th className="px-6 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+                    {searchResults.map((account) => (
+                      <AccountRow key={account.accountId} account={account} showCustomer customerName={account.customerName} />
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        ) : activeGroup ? (
+          /* Selected customer accounts */
+          <>
             <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-100">
-                  {activeGroup.name}
-                </h2>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-zinc-100">{activeGroup.name}</h2>
                 <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
-                  {activeGroup.accounts.filter((a) => a.status === "active").length} active ·{" "}
-                  {activeGroup.accounts.length} total accounts
+                  {activeGroup.accounts.filter((a) => a.status === "active").length} active · {activeGroup.accounts.length} total
                 </p>
               </div>
               <a
@@ -126,27 +170,15 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
                 Add Account
               </a>
             </div>
-
-            {/* Accounts table */}
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-gray-50 dark:bg-zinc-800/60 z-[1]">
                   <tr>
-                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">
-                      Account Name
-                    </th>
-                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">
-                      Account ID
-                    </th>
-                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden lg:table-cell">
-                      Region
-                    </th>
-                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden md:table-cell">
-                      Access Type
-                    </th>
-                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">
-                      Status
-                    </th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Account Name</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Account ID</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden lg:table-cell">Region</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden md:table-cell">Access Type</th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">Status</th>
                     <th className="px-6 py-3" />
                   </tr>
                 </thead>
@@ -170,7 +202,6 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
 
 function AccessTypeBadge({ value }: { value?: string }) {
   if (!value) return <span className="text-gray-400 dark:text-zinc-600 text-xs">—</span>;
-
   const styles: Record<string, string> = {
     Administrator: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
     PowerUser:     "bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400",
@@ -179,19 +210,24 @@ function AccessTypeBadge({ value }: { value?: string }) {
     SecurityAudit: "bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400",
     Custom:        "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400",
   };
-
   const cls = styles[value] ?? "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400";
-  return (
-    <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>
-      {value}
-    </span>
-  );
+  return <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>{value}</span>;
 }
 
-function AccountRow({ account }: { account: Customer }) {
+function AccountRow({
+  account,
+  showCustomer = false,
+  customerName,
+}: {
+  account: Customer;
+  showCustomer?: boolean;
+  customerName?: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(account.status);
   const [error, setError] = useState<string | null>(null);
 
   async function openConsole() {
@@ -213,6 +249,25 @@ function AccountRow({ account }: { account: Customer }) {
     }
   }
 
+  async function toggleStatus() {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    setToggling(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/customers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...account, status: newStatus }),
+      });
+      if (res.ok) { setCurrentStatus(newStatus); router.refresh(); }
+      else { const d = await res.json(); setError(d.error || "Failed"); }
+    } catch {
+      setError("Network error");
+    } finally {
+      setToggling(false);
+    }
+  }
+
   async function handleDelete() {
     if (!confirm(`Remove "${account.accountName || account.accountId}" from the portal?\n\nThe AWS account itself will not be affected.`)) return;
     setDeleting(true);
@@ -230,6 +285,11 @@ function AccountRow({ account }: { account: Customer }) {
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors">
+      {showCustomer && (
+        <td className="px-6 py-3.5">
+          <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">{customerName}</span>
+        </td>
+      )}
       <td className="px-6 py-3.5">
         <span className="font-medium text-gray-900 dark:text-zinc-100">
           {account.accountName || <span className="text-gray-400 dark:text-zinc-600 font-normal">—</span>}
@@ -239,27 +299,34 @@ function AccountRow({ account }: { account: Customer }) {
       <td className="px-6 py-3.5">
         <span className="font-mono text-xs text-gray-500 dark:text-zinc-400">{account.accountId}</span>
       </td>
-      <td className="px-6 py-3.5 hidden lg:table-cell">
-        <span className="text-xs text-gray-500 dark:text-zinc-500">{account.region}</span>
-      </td>
+      {!showCustomer && (
+        <td className="px-6 py-3.5 hidden lg:table-cell">
+          <span className="text-xs text-gray-500 dark:text-zinc-500">{account.region}</span>
+        </td>
+      )}
       <td className="px-6 py-3.5 hidden md:table-cell">
         <AccessTypeBadge value={account.accessType} />
       </td>
       <td className="px-6 py-3.5">
-        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium ${
-          account.status === "active"
-            ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
-            : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500"
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${account.status === "active" ? "bg-green-500" : "bg-gray-400"}`} />
-          {account.status}
-        </span>
+        <button
+          onClick={toggleStatus}
+          disabled={toggling}
+          title={currentStatus === "active" ? "Click to deactivate" : "Click to activate"}
+          className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+            currentStatus === "active"
+              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20"
+              : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 hover:bg-gray-200 dark:hover:bg-zinc-700"
+          }`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${currentStatus === "active" ? "bg-green-500" : "bg-gray-400"}`} />
+          {currentStatus}
+        </button>
       </td>
       <td className="px-6 py-3.5">
         <div className="flex items-center justify-end gap-1">
           <button
             onClick={openConsole}
-            disabled={loading || account.status !== "active"}
+            disabled={loading || currentStatus !== "active"}
             className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md transition-colors"
           >
             {loading ? (
@@ -274,6 +341,16 @@ function AccountRow({ account }: { account: Customer }) {
             )}
             {loading ? "Opening..." : "Open Console"}
           </button>
+
+          <a
+            href={`/admin/customers/${account.accountId}/edit`}
+            title="Edit account"
+            className="p-1.5 text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </a>
 
           <button
             onClick={handleDelete}

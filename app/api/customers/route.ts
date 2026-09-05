@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { listCustomers, createCustomer, deleteCustomer } from "@/lib/dynamodb";
+import { listCustomers, createCustomer, updateCustomer, deleteCustomer, getCustomer } from "@/lib/dynamodb";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -57,6 +57,33 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(customer, { status: 201 });
+}
+
+export async function PUT(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { accountId, name, accountName, accessType, roleArn, externalId, region, status } = body;
+
+  if (!accountId) return NextResponse.json({ error: "accountId is required" }, { status: 400 });
+  if (!roleArn?.startsWith("arn:aws:iam::")) return NextResponse.json({ error: "Invalid roleArn" }, { status: 400 });
+
+  const existing = await getCustomer(accountId);
+  if (!existing) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+
+  await updateCustomer({
+    ...existing,
+    name: name?.trim() || existing.name,
+    accountName: accountName?.trim() || undefined,
+    accessType: accessType?.trim() || undefined,
+    roleArn: roleArn.trim(),
+    externalId: externalId?.trim() || undefined,
+    region: region || existing.region,
+    status: status || existing.status,
+  });
+
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(req: NextRequest) {

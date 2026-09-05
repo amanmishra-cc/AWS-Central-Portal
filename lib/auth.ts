@@ -15,8 +15,8 @@ export const authOptions: NextAuthOptions = {
               email: { label: "Email", type: "email", placeholder: "you@citiuscloud.in" },
             },
             async authorize(credentials) {
-              if (credentials?.email) {
-                return { id: "dev-user", email: credentials.email, name: "Dev User" };
+              if (credentials?.email && credentials.email.endsWith("@citiuscloud.in")) {
+                return { id: "dev-user", email: credentials.email, name: credentials.email.split("@")[0] };
               }
               return null;
             },
@@ -47,6 +47,10 @@ export const authOptions: NextAuthOptions = {
       if (profile) {
         token.email = profile.email;
         token.name = (profile as { name?: string }).name;
+      }
+      // Block non-citiuscloud.in emails
+      if (token.email && !token.email.endsWith("@citiuscloud.in")) {
+        throw new Error("Access restricted to @citiuscloud.in accounts");
       }
       return token;
     },

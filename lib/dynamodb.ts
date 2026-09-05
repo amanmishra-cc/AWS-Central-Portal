@@ -57,6 +57,10 @@ export async function createCustomer(
   return item;
 }
 
+export async function updateCustomer(customer: Customer): Promise<void> {
+  await db.send(new PutCommand({ TableName: CUSTOMERS_TABLE, Item: customer }));
+}
+
 export async function deleteCustomer(accountId: string): Promise<void> {
   await db.send(new DeleteCommand({ TableName: CUSTOMERS_TABLE, Key: { accountId } }));
 }
