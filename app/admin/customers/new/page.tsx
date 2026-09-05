@@ -28,6 +28,7 @@ export default function NewCustomerPage() {
 
   const [form, setForm] = useState({
     name: "",
+    accountName: "",
     accountId: "",
     roleArn: "",
     externalId: "",
@@ -76,6 +77,7 @@ export default function NewCustomerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
+          accountName: form.accountName || undefined,
           accountId: form.accountId,
           roleArn: form.roleArn,
           externalId: form.externalId || undefined,
@@ -133,9 +135,25 @@ export default function NewCustomerPage() {
               value={form.name}
               onChange={handleChange}
               required
-              placeholder="e.g. Ekishwar"
+              placeholder="e.g. Ekishwar — used to group all their accounts"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm"
             />
+          </div>
+
+          {/* Account name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Account Name{" "}
+              <span className="text-gray-600 font-normal">(optional)</span>
+            </label>
+            <input
+              name="accountName"
+              value={form.accountName}
+              onChange={handleChange}
+              placeholder="e.g. Production, Development, Staging"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm"
+            />
+            <p className="text-gray-600 text-xs mt-1">Friendly label for this specific AWS account</p>
           </div>
 
           {/* AWS Account ID */}
