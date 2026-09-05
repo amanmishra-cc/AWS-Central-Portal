@@ -29,6 +29,7 @@ export default function NewCustomerPage() {
   const [form, setForm] = useState({
     name: "",
     accountName: "",
+    accessType: "ReadOnly",
     accountId: "",
     roleArn: "",
     externalId: "",
@@ -71,6 +72,7 @@ export default function NewCustomerPage() {
         body: JSON.stringify({
           name: form.name,
           accountName: form.accountName || undefined,
+          accessType: form.accessType || undefined,
           accountId: form.accountId,
           roleArn: form.roleArn,
           externalId: form.externalId || undefined,
@@ -141,6 +143,18 @@ export default function NewCustomerPage() {
               className={inputClass}
             />
             <p className="text-xs text-gray-400 dark:text-zinc-600 mt-1">Friendly label for this specific AWS account</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Access Type</label>
+            <select name="accessType" value={form.accessType} onChange={handleChange} className={inputClass}>
+              <option value="ReadOnly">ReadOnly</option>
+              <option value="PowerUser">PowerUser</option>
+              <option value="Administrator">Administrator</option>
+              <option value="Billing">Billing</option>
+              <option value="SecurityAudit">SecurityAudit</option>
+              <option value="Custom">Custom</option>
+            </select>
           </div>
 
           <div>

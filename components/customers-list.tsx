@@ -141,6 +141,9 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
                     <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden lg:table-cell">
                       Region
                     </th>
+                    <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3 hidden md:table-cell">
+                      Access Type
+                    </th>
                     <th className="text-left text-xs font-medium text-gray-500 dark:text-zinc-500 px-6 py-3">
                       Status
                     </th>
@@ -162,6 +165,26 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
         )}
       </div>
     </div>
+  );
+}
+
+function AccessTypeBadge({ value }: { value?: string }) {
+  if (!value) return <span className="text-gray-400 dark:text-zinc-600 text-xs">—</span>;
+
+  const styles: Record<string, string> = {
+    Administrator: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+    PowerUser:     "bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    ReadOnly:      "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    Billing:       "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    SecurityAudit: "bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400",
+    Custom:        "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400",
+  };
+
+  const cls = styles[value] ?? "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400";
+  return (
+    <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${cls}`}>
+      {value}
+    </span>
   );
 }
 
@@ -218,6 +241,9 @@ function AccountRow({ account }: { account: Customer }) {
       </td>
       <td className="px-6 py-3.5 hidden lg:table-cell">
         <span className="text-xs text-gray-500 dark:text-zinc-500">{account.region}</span>
+      </td>
+      <td className="px-6 py-3.5 hidden md:table-cell">
+        <AccessTypeBadge value={account.accessType} />
       </td>
       <td className="px-6 py-3.5">
         <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium ${

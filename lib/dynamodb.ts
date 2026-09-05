@@ -20,6 +20,7 @@ export interface Customer {
   accountId: string;    // AWS Account ID — partition key
   name: string;         // Customer / company name — used for grouping
   accountName?: string; // Friendly name for this specific account (e.g. "Production")
+  accessType?: string;  // e.g. ReadOnly, Administrator, PowerUser
   roleArn: string;      // arn:aws:iam::<accountId>:role/CitiusCloud-ReadOnly
   externalId?: string;  // ExternalId in role trust policy (leave blank if role has none)
   region: string;       // Default region for console login

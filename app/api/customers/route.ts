@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, accountName, accountId, roleArn, externalId, region } = body;
+  const { name, accountName, accountId, roleArn, externalId, region, accessType } = body;
 
   if (!name || !accountId || !roleArn) {
     return NextResponse.json(
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     accountId,
     name: name.trim(),
     accountName: accountName?.trim() || undefined,
+    accessType: accessType?.trim() || undefined,
     roleArn: roleArn.trim(),
     externalId: externalId?.trim() || undefined,
     region: region || "ap-south-1",
