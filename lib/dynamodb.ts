@@ -5,6 +5,7 @@ import {
   GetCommand,
   PutCommand,
   DeleteCommand,
+  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({
@@ -15,6 +16,7 @@ export const db = DynamoDBDocumentClient.from(client);
 
 export const CUSTOMERS_TABLE = process.env.CUSTOMERS_TABLE || "citius-customers";
 export const AUDIT_TABLE = process.env.AUDIT_TABLE || "citius-audit-logs";
+export const PERMISSIONS_TABLE = process.env.PERMISSIONS_TABLE || "citius-user-permissions";
 
 export interface Customer {
   accountId: string;    // AWS Account ID — partition key
@@ -26,6 +28,49 @@ export interface Customer {
   region: string;       // Default region for console login
   status: "active" | "inactive";
   onboardedAt: string;
+}
+
+export interface UserPermission {
+  email: string;          // PK — team member email
+  accountId: string;      // SK — AWS account ID
+  allowedRoles: string[]; // e.g. ["ReadOnly", "PowerUser"]
+  grantedBy: string;      // admin email who granted this
+  grantedAt: string;
+}
+
+export async function listAllPermissions(): Promise<UserPermission[]> {
+  const result = await db.send(new ScanCommand({ TableName: PERMISSIONS_TABLE }));
+  return ((result.Items as UserPermission[]) || []).sort((a, b) => a.email.localeCompare(b.email));
+}
+
+export async function listUserPermissions(email: string): Promise<UserPermission[]> {
+  const result = await db.send(
+    new QueryCommand({
+      TableName: PERMISSIONS_TABLE,
+      KeyConditionExpression: "email = :e",
+      ExpressionAttributeValues: { ":e": email },
+    })
+  );
+  return (result.Items as UserPermission[]) || [];
+}
+
+export async function getUserPermission(email: string, accountId: string): Promise<UserPermission | null> {
+  const result = await db.send(
+    new GetCommand({ TableName: PERMISSIONS_TABLE, Key: { email, accountId } })
+  );
+  return (result.Item as UserPermission) || null;
+}
+
+export async function grantPermission(
+  permission: Omit<UserPermission, "grantedAt">
+): Promise<void> {
+  await db.send(
+    new PutCommand({ TableName: PERMISSIONS_TABLE, Item: { ...permission, grantedAt: new Date().toISOString() } })
+  );
+}
+
+export async function revokePermission(email: string, accountId: string): Promise<void> {
+  await db.send(new DeleteCommand({ TableName: PERMISSIONS_TABLE, Key: { email, accountId } }));
 }
 
 export interface AuditEntry {

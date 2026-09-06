@@ -7,7 +7,7 @@ import { Customer } from "@/lib/dynamodb";
 type CustomerGroup = { name: string; accounts: Customer[] };
 type FlatAccount = Customer & { customerName: string };
 
-export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
+export function CustomersList({ groups, isAdmin = false }: { groups: CustomerGroup[]; isAdmin?: boolean }) {
   const [selected, setSelected] = useState<string>(groups[0]?.name ?? "");
   const [search, setSearch] = useState("");
 
@@ -101,17 +101,19 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
           )}
         </nav>
 
-        <div className="p-3 border-t border-gray-200 dark:border-zinc-800">
-          <a
-            href="/admin/customers/new"
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Account
-          </a>
-        </div>
+        {isAdmin && (
+          <div className="p-3 border-t border-gray-200 dark:border-zinc-800">
+            <a
+              href="/admin/customers/new"
+              className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-medium text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Account
+            </a>
+          </div>
+        )}
       </aside>
 
       {/* Main content */}
@@ -143,7 +145,7 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
                     {searchResults.map((account) => (
-                      <AccountRow key={account.accountId} account={account} showCustomer customerName={account.customerName} />
+                      <AccountRow key={account.accountId} account={account} showCustomer customerName={account.customerName} isAdmin={isAdmin} />
                     ))}
                   </tbody>
                 </table>
@@ -160,15 +162,17 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
                   {activeGroup.accounts.filter((a) => a.status === "active").length} active · {activeGroup.accounts.length} total
                 </p>
               </div>
-              <a
-                href="/admin/customers/new"
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-brand hover:bg-brand-hover text-white rounded-md transition-colors"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Account
-              </a>
+              {isAdmin && (
+                <a
+                  href="/admin/customers/new"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 bg-brand hover:bg-brand-hover text-white rounded-md transition-colors"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Account
+                </a>
+              )}
             </div>
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
@@ -184,7 +188,7 @@ export function CustomersList({ groups }: { groups: CustomerGroup[] }) {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
                   {activeGroup.accounts.map((account) => (
-                    <AccountRow key={account.accountId} account={account} />
+                    <AccountRow key={account.accountId} account={account} isAdmin={isAdmin} />
                   ))}
                 </tbody>
               </table>
@@ -218,10 +222,12 @@ function AccountRow({
   account,
   showCustomer = false,
   customerName,
+  isAdmin = false,
 }: {
   account: Customer;
   showCustomer?: boolean;
   customerName?: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -308,19 +314,30 @@ function AccountRow({
         <AccessTypeBadge value={account.accessType} />
       </td>
       <td className="px-6 py-3.5">
-        <button
-          onClick={toggleStatus}
-          disabled={toggling}
-          title={currentStatus === "active" ? "Click to deactivate" : "Click to activate"}
-          className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+        {isAdmin ? (
+          <button
+            onClick={toggleStatus}
+            disabled={toggling}
+            title={currentStatus === "active" ? "Click to deactivate" : "Click to activate"}
+            className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+              currentStatus === "active"
+                ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20"
+                : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 hover:bg-gray-200 dark:hover:bg-zinc-700"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${currentStatus === "active" ? "bg-green-500" : "bg-gray-400"}`} />
+            {currentStatus}
+          </button>
+        ) : (
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium ${
             currentStatus === "active"
-              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20"
-              : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500 hover:bg-gray-200 dark:hover:bg-zinc-700"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${currentStatus === "active" ? "bg-green-500" : "bg-gray-400"}`} />
-          {currentStatus}
-        </button>
+              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+              : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-500"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${currentStatus === "active" ? "bg-green-500" : "bg-gray-400"}`} />
+            {currentStatus}
+          </span>
+        )}
       </td>
       <td className="px-6 py-3.5">
         <div className="flex items-center justify-end gap-1">
@@ -342,33 +359,36 @@ function AccountRow({
             {loading ? "Opening..." : "Open Console"}
           </button>
 
-          <a
-            href={`/admin/customers/${account.accountId}/edit`}
-            title="Edit account"
-            className="p-1.5 text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </a>
-
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            title="Remove account"
-            className="p-1.5 text-gray-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-40"
-          >
-            {deleting ? (
-              <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-            ) : (
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            )}
-          </button>
+          {isAdmin && (
+            <>
+              <a
+                href={`/admin/customers/${account.accountId}/edit`}
+                title="Edit account"
+                className="p-1.5 text-gray-400 dark:text-zinc-600 hover:text-gray-700 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </a>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Remove account"
+                className="p-1.5 text-gray-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-40"
+              >
+                {deleting ? (
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
