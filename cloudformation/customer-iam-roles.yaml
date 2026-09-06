@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  CitiusCloud MSP — IAM Roles for AWS Console Federation.
+  CitiusCloud MSP - IAM Roles for AWS Console Federation.
   Creates 5 standard roles that trust the CitiusCloud gateway account (039632811020).
   Deploy this template once in each customer AWS account.
 
@@ -8,9 +8,9 @@ Parameters:
   ExternalId:
     Type: String
     Description: >
-      ExternalId to add to each role's trust policy (recommended for security).
+      ExternalId to add to each role trust policy (recommended for security).
       Use the same value you record in the CitiusCloud portal for this account.
-      Leave blank to omit ExternalId from the trust policy (less secure).
+      Leave blank to omit ExternalId from the trust policy.
     Default: ""
 
   GatewayAccountId:
@@ -26,15 +26,8 @@ Parameters:
 Conditions:
   HasExternalId: !Not [!Equals [!Ref ExternalId, ""]]
 
-# ---------------------------------------------------------------------------
-# Reusable trust policy document (via Conditions on ExternalId)
-# ---------------------------------------------------------------------------
-
 Resources:
 
-  # --------------------------------------------------------------------------
-  # 1. ReadOnly — AWS managed ReadOnlyAccess policy
-  # --------------------------------------------------------------------------
   ReadOnlyRole:
     Type: AWS::IAM::Role
     Properties:
@@ -59,14 +52,11 @@ Resources:
         - Key: ManagedBy
           Value: CitiusCloud
 
-  # --------------------------------------------------------------------------
-  # 2. PowerUser — AWS managed PowerUserAccess policy
-  # --------------------------------------------------------------------------
   PowerUserRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-PowerUser"
-      Description: CitiusCloud portal - power user console access (no IAM changes)
+      Description: CitiusCloud portal - power user console access
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -86,9 +76,6 @@ Resources:
         - Key: ManagedBy
           Value: CitiusCloud
 
-  # --------------------------------------------------------------------------
-  # 3. Administrator — AWS managed AdministratorAccess policy
-  # --------------------------------------------------------------------------
   AdministratorRole:
     Type: AWS::IAM::Role
     Properties:
@@ -113,9 +100,6 @@ Resources:
         - Key: ManagedBy
           Value: CitiusCloud
 
-  # --------------------------------------------------------------------------
-  # 4. Billing — AWS managed Billing policy
-  # --------------------------------------------------------------------------
   BillingRole:
     Type: AWS::IAM::Role
     Properties:
@@ -140,9 +124,6 @@ Resources:
         - Key: ManagedBy
           Value: CitiusCloud
 
-  # --------------------------------------------------------------------------
-  # 5. SecurityAudit — AWS managed SecurityAudit policy
-  # --------------------------------------------------------------------------
   SecurityAuditRole:
     Type: AWS::IAM::Role
     Properties:
@@ -167,12 +148,9 @@ Resources:
         - Key: ManagedBy
           Value: CitiusCloud
 
-# ---------------------------------------------------------------------------
-# Outputs — copy these ARNs into the CitiusCloud portal
-# ---------------------------------------------------------------------------
 Outputs:
   ReadOnlyRoleArn:
-    Description: ARN for the ReadOnly role — use this in the portal
+    Description: ARN for the ReadOnly role
     Value: !GetAtt ReadOnlyRole.Arn
 
   PowerUserRoleArn:
