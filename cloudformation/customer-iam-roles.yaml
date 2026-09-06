@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CitiusCloud MSP — IAM Roles for AWS Console Federation.
+  Creates 5 standard roles that trust the CitiusCloud gateway account (039632811020).
+  Deploy this template once in each customer AWS account.
+
+Parameters:
+  ExternalId:
+    Type: String
+    Description: >
+      ExternalId to add to each role's trust policy (recommended for security).
+      Use the same value you record in the CitiusCloud portal for this account.
+      Leave blank to omit ExternalId from the trust policy (less secure).
+    Default: ""
+
+  GatewayAccountId:
+    Type: String
+    Description: CitiusCloud gateway AWS account ID that will assume these roles.
+    Default: "039632811020"
+
+  RoleNamePrefix:
+    Type: String
+    Description: Prefix for all role names. Do not change unless instructed by CitiusCloud.
+    Default: "CitiusCloud"
+
+Conditions:
+  HasExternalId: !Not [!Equals [!Ref ExternalId, ""]]
+
+# ---------------------------------------------------------------------------
+# Reusable trust policy document (via Conditions on ExternalId)
+# ---------------------------------------------------------------------------
+
+Resources:
+
+  # --------------------------------------------------------------------------
+  # 1. ReadOnly — AWS managed ReadOnlyAccess policy
+  # --------------------------------------------------------------------------
+  ReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RoleNamePrefix}-ReadOnly"
+      Description: CitiusCloud portal — read-only console access
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${GatewayAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - HasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref ExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CitiusCloud
+
+  # --------------------------------------------------------------------------
+  # 2. PowerUser — AWS managed PowerUserAccess policy
+  # --------------------------------------------------------------------------
+  PowerUserRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RoleNamePrefix}-PowerUser"
+      Description: CitiusCloud portal — power user console access (no IAM changes)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${GatewayAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - HasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref ExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CitiusCloud
+
+  # --------------------------------------------------------------------------
+  # 3. Administrator — AWS managed AdministratorAccess policy
+  # --------------------------------------------------------------------------
+  AdministratorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RoleNamePrefix}-Administrator"
+      Description: CitiusCloud portal — full admin console access
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${GatewayAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - HasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref ExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CitiusCloud
+
+  # --------------------------------------------------------------------------
+  # 4. Billing — AWS managed Billing policy
+  # --------------------------------------------------------------------------
+  BillingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RoleNamePrefix}-Billing"
+      Description: CitiusCloud portal — billing console access
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${GatewayAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - HasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref ExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/Billing
+      Tags:
+        - Key: ManagedBy
+          Value: CitiusCloud
+
+  # --------------------------------------------------------------------------
+  # 5. SecurityAudit — AWS managed SecurityAudit policy
+  # --------------------------------------------------------------------------
+  SecurityAuditRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RoleNamePrefix}-SecurityAudit"
+      Description: CitiusCloud portal — security audit console access
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${GatewayAccountId}:root"
+            Action: sts:AssumeRole
+            Condition: !If
+              - HasExternalId
+              - StringEquals:
+                  sts:ExternalId: !Ref ExternalId
+              - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/SecurityAudit
+      Tags:
+        - Key: ManagedBy
+          Value: CitiusCloud
+
+# ---------------------------------------------------------------------------
+# Outputs — copy these ARNs into the CitiusCloud portal
+# ---------------------------------------------------------------------------
+Outputs:
+  ReadOnlyRoleArn:
+    Description: ARN for the ReadOnly role — use this in the portal
+    Value: !GetAtt ReadOnlyRole.Arn
+
+  PowerUserRoleArn:
+    Description: ARN for the PowerUser role
+    Value: !GetAtt PowerUserRole.Arn
+
+  AdministratorRoleArn:
+    Description: ARN for the Administrator role
+    Value: !GetAtt AdministratorRole.Arn
+
+  BillingRoleArn:
+    Description: ARN for the Billing role
+    Value: !GetAtt BillingRole.Arn
+
+  SecurityAuditRoleArn:
+    Description: ARN for the SecurityAudit role
+    Value: !GetAtt SecurityAuditRole.Arn

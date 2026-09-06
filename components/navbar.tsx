@@ -37,12 +37,20 @@ export function Navbar({ userEmail, userName, isAdmin }: NavbarProps) {
       </Link>
 
       {isAdmin && (
-        <Link
-          href="/admin/users"
-          className="text-xs font-medium text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
-        >
-          Team Access
-        </Link>
+        <>
+          <Link
+            href="/admin/users"
+            className="text-xs font-medium text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
+          >
+            Team Access
+          </Link>
+          <Link
+            href="/admin/audit"
+            className="text-xs font-medium text-gray-500 dark:text-zinc-500 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
+          >
+            Audit Log
+          </Link>
+        </>
       )}
 
       <button

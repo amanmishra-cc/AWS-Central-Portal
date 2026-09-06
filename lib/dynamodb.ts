@@ -110,6 +110,14 @@ export async function deleteCustomer(accountId: string): Promise<void> {
   await db.send(new DeleteCommand({ TableName: CUSTOMERS_TABLE, Key: { accountId } }));
 }
 
+export async function listAuditLogs(limit = 200): Promise<AuditEntry[]> {
+  const result = await db.send(
+    new ScanCommand({ TableName: AUDIT_TABLE, Limit: limit })
+  );
+  const items = (result.Items as AuditEntry[]) || [];
+  return items.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+}
+
 export async function logAudit(entry: Omit<AuditEntry, "id" | "timestamp">): Promise<void> {
   await db.send(
     new PutCommand({
