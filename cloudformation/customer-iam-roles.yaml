@@ -39,7 +39,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-ReadOnly"
-      Description: CitiusCloud portal — read-only console access
+      Description: CitiusCloud portal - read-only console access
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -66,7 +66,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-PowerUser"
-      Description: CitiusCloud portal — power user console access (no IAM changes)
+      Description: CitiusCloud portal - power user console access (no IAM changes)
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -93,7 +93,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-Administrator"
-      Description: CitiusCloud portal — full admin console access
+      Description: CitiusCloud portal - full admin console access
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -120,7 +120,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-Billing"
-      Description: CitiusCloud portal — billing console access
+      Description: CitiusCloud portal - billing console access
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -147,7 +147,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub "${RoleNamePrefix}-SecurityAudit"
-      Description: CitiusCloud portal — security audit console access
+      Description: CitiusCloud portal - security audit console access
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
