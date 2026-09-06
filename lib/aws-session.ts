@@ -1,6 +1,8 @@
 import { STSClient, AssumeRoleCommand, Credentials } from "@aws-sdk/client-sts";
 
-const sts = new STSClient({ region: process.env.AWS_REGION || "ap-south-1" });
+// Use us-east-1 (global STS endpoint) — always enabled in every AWS account.
+// Regional endpoints (e.g. ap-south-1) must be explicitly activated per account.
+const sts = new STSClient({ region: "us-east-1" });
 
 /**
  * Assumes an IAM role in a customer account and returns temporary credentials.
